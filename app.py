@@ -1,70 +1,66 @@
-import json
-from flask import Flask, request, jsonify
-from flask_mongoengine import MongoEngine
+from flask import Flask, jsonify, request, render_template, redirect
+from flask_pymongo import PyMongo
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
-app.config['MONGODB_SETTINGS'] = {
-  'host':'mongodb://localhost:27017/progress_tracker'}
-db = MongoEngine()
-db.init_app(app)
 
-class User(db.Document):
-    first_name = db.StringField()
-    last_name = db.StringField()
-    username = db.StringField()
-    password = db.StringField()
-    profile_image = db.StringField()
-    email = db.StringField()
-    role = db.StringField()
-    shows_watched = db.StringField()
+bcrypt = Bcrypt(app)
 
-    def to_json(self):
-        return {"firstname": self.first_name, 
-                "lastname": self.last_name,
-                "username": self.username,
-                "password": self.password, 
-                "profile_image": self.profile_image,
-                "email": self.email, 
-                "role": self.role,
-                "shows_watched": self.shows_watched}
+try: 
+    app = Flask(__name__)
+    app.config["MONGO_URI"] = "mongodb://localhost:27017/progress_tracker"
+    mongo = PyMongo(app) 
+except: 
+        print("ERROR- cannot connect to db")
 
-@app.route('/users', methods=['GET'])
-def query_records():
-    first_name= request.args.get("firstname")
-    #user = User.objects()
-    user = User.objects(first_name= first_name).first()
-    if not user:
-        return jsonify({'error': 'data not found'})
-    else:
-        return jsonify(user)
+@app.route('/', methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
 
-@app.route('/', methods=['PUT'])
-def create_record():
-    record = json.loads(request.data)
-    user = User(name=record['name'],
-                email=record['email'])
-    user.save()
-    return jsonify(user.to_json())
+        user = mongo.db.Users.find_one({"Username": username})
 
-@app.route('/', methods=['POST'])
-def update_record():
-    record = json.loads(request.data)
-    user = User.objects(first_name=record['name']).first()
-    if not user:
-        return jsonify({'error': 'data not found'})
-    else:
-        user.update(email=record['email'])
-    return jsonify(user.to_json())
+        if user and user["Password"] == password:
+            # Successful login
+            return redirect("/dashboard")
 
-@app.route('/', methods=['DELETE'])
-def delete_record():
-    record = json.loads(request.data)
-    user = User.objects(first_name=record['name']).first()
-    if not user:
-        return jsonify({'error': 'data not found'})
-    else:
-        user.delete()
-    return jsonify(user.to_json())
+        # Invalid credentials
+        error = "Invalid username or password"
+        return render_template("login.html", error=error)
+
+    return render_template("login.html")
+
+@app.route("/users", methods=["GET","POST"])
+def get_users():
+    if request.method == "GET":
+        users = list(mongo.db.Users.find())
+        for user in users:
+            user["_id"] = str(user["_id"])  # Convert ObjectId to string for JSON serialization    
+        return render_template("./users.html", users=users)
+
+    elif request.method == "POST":
+        post_data = request.json
+        # Assuming post_data is a dictionary containing user details
+        new_user_id = mongo.db.users.insert_one(post_data).inserted_id
+        return jsonify(str(new_user_id)), 201  # Return the new user's ID and HTTP status code 201 (Created)
+
+    return "request handled"
+
+@app.route("/tvshows", methods=["GET","POST"])
+def get_tvshows():
+    if request.method == "GET":
+        tv = list(mongo.db.TV.find())
+        for show in tv:
+            show["_id"] = str(show["_id"])  # Convert ObjectId to string for JSON serialization    
+        return render_template("./tv.html", tv=tv)
+
+    elif request.method == "POST":
+        post_data = request.json["key"]
+        print(post_data)
+        # Handle Mongo interactions here
+
+    return "request handled"
 
 if __name__ == "__main__":
     app.run(debug=True)

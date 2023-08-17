@@ -1,0 +1,10 @@
+*
+!.gitignore
+!app.py
+!CreateAndInsert.ipynb
+!templates/login.html
+!templates/register.html
+!templates/tv.html
+!templates/users.html
+!/*
+
