@@ -1,0 +1,6 @@
+*
+!.gitignore
+
+!app.py
+!CreateAndInsert.ipynb
+!templates/.gitkeep
