@@ -21,7 +21,7 @@ def login():
 
         user = mongo.db.Users.find_one({"Username": username})
 
-        if user and Bcrypt.check_password_hash(user["Password"], password):
+        if user and user["Password"] == password:
             # Successful login
             return redirect("/dashboard")
 
