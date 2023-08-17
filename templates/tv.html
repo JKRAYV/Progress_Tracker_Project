@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV Shows</title>
+</head>
+<body>
+    <h1>List of TV Shows</h1>
+    <ul>
+        {% for show in tv %}
+            <li>Title: {{ show.Title }}</li>
+            <ul>
+                <li>Creators:</li>
+                <ul>
+                    {% for creator in show.Creators %}
+                    <li>{{ creator }}</li>
+                    {% endfor %}
+                </ul>
+                <li>Number of Episodes: {{ show.Number_of_Episodes }}</li>
+            </ul>
+        {% endfor %}
+    </ul>
+</body>
+</html>

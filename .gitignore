@@ -1,6 +1,10 @@
 *
 !.gitignore
-
 !app.py
 !CreateAndInsert.ipynb
-!templates/
+!templates/login.html
+!templates/register.html
+!templates/tv.html
+!templates/users.html
+!/*
+
