@@ -1,0 +1,107 @@
+/* Reset some default styles */
+body, h1, h2, h3, p {
+    margin: 0;
+    padding: 0;
+}
+
+/* Apply a black background to the body */
+body {
+    background: linear-gradient(#000000, #000000, #000000, #ff0000);
+    color: #fff;
+    font-family: Arial, Impact,;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh; /* Set the body height to 100% of the viewport height */
+}
+
+/* Create a container with grey background and white text */
+.container {
+    background-color: #444;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+/* Style headings with red color */
+h1 {
+    margin-bottom: 2vh;
+    padding: 60px;
+    color: #ff0000
+
+}
+
+h2, h3 {
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+/* Style links */
+
+.shows-available {
+    text-align: left;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: red;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+}
+
+.progress-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.linear-progress-container {
+    width: 100%;
+    background-color: #f3f3f3;
+    border-radius: 15px;
+    margin-top: 20px;
+}
+
+.linear-progress-bar {
+    height: 30px;
+    width: 0%;  /* Initial value */
+    background-color: #4CAF50;
+    border-radius: 15px;
+    text-align: center;  /* To display any text inside the progress bar */
+    line-height: 30px;  /* Align the text to the middle */
+    color: white;
+}
+
+.progress-text {
+    position: absolute;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    z-index: 1;
+}
+
+button {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: darkred;
+}
+
+a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: lightgrey;
+}
