@@ -141,6 +141,7 @@ def advance_episode(show_title):
                 # Fetch total episodes from the TV table
                 tv_show = mongo.db.TV.find_one({"Title": show_title})
                 total_episodes = tv_show["Number_of_Episodes"]
+                user_show["Status"] = "watching"
 
                 # Check if advancing the episode will complete the show
                 if user_show["Episodes"] + 1 == total_episodes or user_show["Episodes"] + 1 > total_episodes:
@@ -181,6 +182,7 @@ def show_details(show_title):
                 # Calculates the percentage watched
                 total_episodes = show["Number_of_Episodes"]
                 completion_percentage = (user_show["Episodes"] / total_episodes) * 100
+                
 
                 return render_template('show_details.html', show=show, user_show=user_show, completion_percentage=completion_percentage)
 

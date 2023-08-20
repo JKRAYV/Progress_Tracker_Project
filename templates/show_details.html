@@ -21,61 +21,88 @@
         <p>Status: {{ user_show.Status }}</p>
         <p>Current Episode: {{ user_show.Episodes }}</p>
 
-        {% if user_show.Status == "watching" %}
-            <form action="{{ url_for('advance_episode', show_title=show.Title) }}" method="POST">
-                <button type="submit" id="next-episode-button">NEXT EPISODE</button>
-            </form>
-        {% elif user_show.Status == "plan to watch" %}
-            <form action="{{ url_for('advance_episode', show_title=show.Title) }}" method="POST">
-                <button type="submit">START WATCHING</button>
-            </form>
-        {% elif user_show.Status == "completed" %}
-            <form action="{{ url_for('restart_show', show_title=show.Title) }}" method="POST">
-                <button type="submit" id="restart-button" style="display: none;">RESTART</button>
-            </form>
-            <form action="{{ url_for('remove_show', show_title=show.Title) }}" method="POST">
-                <button type="submit" id="remove-button" style="display: none;">REMOVE</button>
-            </form>
-        {% endif %}
+        <form action="{{ url_for('advance_episode', show_title=show.Title) }}" method="POST">
+            <button type="submit" id="next-episode-button">NEXT EPISODE</button>
+        </form>
+        <form action="{{ url_for('advance_episode', show_title=show.Title) }}" method="POST">
+            <button type="submit" id="start-watching">START WATCHING</button>
+        </form>
+        <form action="{{ url_for('restart_show', show_title=show.Title) }}" method="POST">
+            <button type="submit" id="restart-button">RESTART</button>
+        </form>
+        <form action="{{ url_for('remove_show', show_title=show.Title) }}" method="POST">
+            <button type="submit" id="remove-button">REMOVE</button>
+        </form>
     </div>
 
-    <script>
-       document.getElementById('next-episode-button').addEventListener('click', function(e) {
-    e.preventDefault();
+    
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
 
-    fetch(`{{ url_for('advance_episode', show_title=show.Title) }}`, { method: 'POST' })
-    .then(response => response.json())
-    .then(data => {
-        const progressBar = document.getElementById('linear-progress-bar');
-        const currentEpisodeElement = document.querySelector(".container p:nth-child(4)");
-        const statusElement = document.querySelector(".container p:nth-child(3)");
-        const restartButton = document.getElementById('restart-button');
-        const removeButton = document.getElementById('remove-button');
+                function adjustButtonVisibility(status) {
+                    const startWatchingButton = document.getElementById('start-watching');
+                    const restartButton = document.getElementById('restart-button');
+                    const removeButton = document.getElementById('remove-button');
+                    const nextEpisodeButton = document.getElementById('next-episode-button');
 
-        if (data.completion_percentage) {
-            progressBar.style.width = data.completion_percentage + "%";
-            progressBar.textContent = data.completion_percentage.toFixed(2) + "%";
-        }
+                    if (status === "plan to watch") {
+                        nextEpisodeButton.style.display = 'none';
+                        startWatchingButton.style.display = 'block';
+                        restartButton.style.display = 'none';
+                        removeButton.style.display = 'none';
+                    } else if (status === "watching") {
+                        nextEpisodeButton.style.display = 'block';
+                        startWatchingButton.style.display = 'none';
+                        restartButton.style.display = 'none';
+                        removeButton.style.display = 'none';
+                    } else if (status === "completed") {
+                        nextEpisodeButton.style.display = 'none';
+                        startWatchingButton.style.display = 'none'; 
+                        restartButton.style.display = 'block';
+                        removeButton.style.display = 'block';
+                    }
+                }
 
-        if (data.current_episode) {
-            currentEpisodeElement.textContent = "Current Episode: " + data.current_episode;
-        }
+                // Set initial button visibility based on the page's data
+                adjustButtonVisibility("{{ user_show.Status }}");
 
-        if (data.status) {
-            statusElement.textContent = "Status: " + data.status;
+                // Add event listeners to both "next-episode-button" and "start-watching" buttons
+                ['next-episode-button', 'start-watching'].forEach(function(buttonId) {
+                    const button = document.getElementById(buttonId);
+                    if (button) {
+                        button.addEventListener('click', function(e) {
+                            e.preventDefault();
 
-            if (data.status === "completed") {
-                document.getElementById('next-episode-button').style.display = 'none';
-                restartButton.style.display = 'inline-block';
-                removeButton.style.display = 'inline-block';
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error updating progress:', error);
-    });
-});
+                            fetch(`{{ url_for('advance_episode', show_title=show.Title) }}`, { method: 'POST' })
+                            .then(response => response.json())
+                            .then(data => {
+                                const progressBar = document.getElementById('linear-progress-bar');
+                                const currentEpisodeElement = document.querySelector(".container p:nth-child(4)");
+                                const statusElement = document.querySelector(".container p:nth-child(3)");
 
-    </script>
+                                if (data.completion_percentage) {
+                                    progressBar.style.width = data.completion_percentage + "%";
+                                    progressBar.textContent = data.completion_percentage.toFixed(2) + "%";
+                                }
+
+                                if (data.current_episode) {
+                                    currentEpisodeElement.textContent = "Current Episode: " + data.current_episode;
+                                }
+
+                                if (data.status) {
+                                    statusElement.textContent = "Status: " + data.status;
+                                    adjustButtonVisibility(data.status);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error updating progress:', error);
+                            });
+                        });
+                    }
+                });
+
+            });
+        </script>
 </body>
 </html>
+

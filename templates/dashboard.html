@@ -17,7 +17,7 @@
                     <li>Status: {{ show.Status }}</li>
                     <li>Episodes Watched: {{ show.Episodes }}</li>
                 </ul>
-                <!-- Add Watch button for each show -->
+                <!-- Add Watch Restart Remove Buttons button for each show -->
                 <form action="{{ url_for('show_details', show_title=show.Name) }}" method="GET">
                     <button type="submit">Watch</button>
                 </form>
