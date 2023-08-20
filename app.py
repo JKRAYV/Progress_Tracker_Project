@@ -37,6 +37,7 @@ def register():
     if request.method == "POST":
         first_name = request.form.get("first_name")
         last_name = request.form.get("last_name")
+        email = request.form.get("email")
         username = request.form.get("username")
         password = request.form.get("password")
 
@@ -53,6 +54,7 @@ def register():
         new_user = {
             "First_name": first_name,
             "Last_name": last_name,
+            "Email":email,
             "Username": username,
             "Password": hashed_password  # Replace with hashed password
         }
