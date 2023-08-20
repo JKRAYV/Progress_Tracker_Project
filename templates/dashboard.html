@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Users</title>
+</head>
+<body>
+    <h1>Show dashboard</h1>
+    <ul>
+        <h2>Name: {{ user_data.Fname }}  {{ user_data.Lname }} </h2>
+        {% for show in user_data.Shows_Watched %}
+            <ul>
+                <li>Show: {{ show.Name }}</li>
+                <ul>
+                    <li>Status: {{ show.Status }}</li>
+                    <li>Episodes Watched: {{ show.Episodes }}</li>
+                </ul>
+                <!-- Add Watch button for each show -->
+                <form action="{{ url_for('show_details', show_title=show.Name) }}" method="GET">
+                    <button type="submit">Watch</button>
+                </form>
+                <br><br>
+            </ul>
+        {% endfor %}
+    </ul>
+
+     <!-- Shows available to watch -->
+    <div class="shows-available">
+        <h2>Available Shows</h2>
+        <ul>
+            {% for show in available_shows %}
+                <li>
+                    {{ show.Title }}
+                    <a href="{{ url_for('add_show', show_title=show.Title) }}">Add</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</body>
+</html>

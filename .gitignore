@@ -6,5 +6,7 @@
 !templates/register.html
 !templates/tv.html
 !templates/users.html
+!templates/show_details.html
+!templates/dashboard.html
 !/*
 

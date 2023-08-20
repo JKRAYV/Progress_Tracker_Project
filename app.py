@@ -1,10 +1,9 @@
-from flask import Flask, jsonify, request, render_template, redirect
+from flask import Flask, jsonify, request, render_template, redirect, session
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
+import os
 
 app = Flask(__name__)
-
-bcrypt = Bcrypt(app)
 
 try: 
     app = Flask(__name__)
@@ -15,6 +14,7 @@ except:
 
 @app.route('/', methods=["GET", "POST"])
 def login():
+    app.secret_key = os.urandom(24) # establishes session secret key
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
@@ -22,6 +22,7 @@ def login():
         user = mongo.db.Users.find_one({"Username": username})
 
         if user and user["Password"] == password:
+            session['username'] = username #stores session username
             # Successful login
             return redirect("/dashboard")
 
@@ -61,6 +62,173 @@ def get_tvshows():
         # Handle Mongo interactions here
 
     return "request handled"
+@app.route('/dashboard', methods=["GET","POST","PUT"])
+def dashboard():
+    if 'username' in session:
+        logged_in_username = session['username'] #current user logged in
+
+        user_data = mongo.db.Users.find_one({"Username": logged_in_username}) #finds instance of user
+        if user_data:
+            tv_shows = list(mongo.db.TV.find())  # Retrieve all TV shows from the TV collection
+            #-------------------------Updates Status of shows-------------------------
+            for show in user_data["Shows_Watched"]:
+                for tv_show in tv_shows:
+                    if tv_show["Title"] == show["Name"]:
+                        num_episodes = tv_show["Number_of_Episodes"]
+                        if show["Episodes"] == 0:
+                            show["Status"] = "plan to watch"
+                        elif 0 < show["Episodes"] < num_episodes:
+                            show["Status"] = "watching"
+                        elif show["Episodes"] == num_episodes or show["Episodes"] > num_episodes:
+                            show["Status"] = "completed"
+                            show["Episodes"] = num_episodes
+                        break  # No need to continue searching for matching TV shows
+                        
+            # Update user data in MongoDB
+            mongo.db.Users.update_one({"Username": logged_in_username}, {"$set": {"Shows_Watched": user_data["Shows_Watched"]}})
+            #--------------------------------------------------------------------------
+
+            #Finds all shows that user is currently not engaged with. Needed for selecting new shows to watch.
+            available_shows = [show for show in tv_shows if show["Title"] not in [user_show["Name"] for user_show in user_data["Shows_Watched"]]]
+
+            # Render the dashboard template with the updated data
+            return render_template('dashboard.html', user_data=user_data, available_shows = available_shows)
+        else:
+            error = "User not found"
+            return render_template('dashboard.html', error=error)
+    else:
+        error = "Please log in before accessing this data."
+        return redirect("/")
+    
+@app.route('/add_show/<show_title>')
+def add_show(show_title):
+    if 'username' in session:
+        logged_in_username = session['username']
+
+        user_data = mongo.db.Users.find_one({"Username": logged_in_username})
+        if user_data:
+            # Retrieve the selected TV show based on the show_title
+            selected_show = mongo.db.TV.find_one({"Title": show_title})
+
+            if selected_show:
+                # Add the show to the user's Shows_Watched array
+                new_show = {
+                    "Name": selected_show["Title"],
+                    "Status": "plan to watch",
+                    "Episodes": 0
+                }
+                user_data["Shows_Watched"].append(new_show)
+                mongo.db.Users.update_one({"Username": logged_in_username}, {"$set": user_data})
+
+                # Redirect back to the dashboard after adding the show
+                return redirect("/dashboard")
+
+    # If something goes wrong, return to the dashboard with an error
+    error = "Failed to add show"
+    return redirect("/dashboard?error=" + error)
+
+@app.route('/advance_episode/<show_title>', methods=["POST"])
+def advance_episode(show_title):
+    if 'username' in session:
+        logged_in_username = session['username']
+
+        user_data = mongo.db.Users.find_one({"Username": logged_in_username})
+        if user_data:
+            # Find the user's show by its title
+            user_show = next((show for show in user_data["Shows_Watched"] if show["Name"] == show_title), None)
+
+            if user_show and user_show["Status"] == "watching" or user_show and user_show["Status"] == "plan to watch":
+                # Fetch total episodes from the TV table
+                tv_show = mongo.db.TV.find_one({"Title": show_title})
+                total_episodes = tv_show["Number_of_Episodes"]
+
+                # Check if advancing the episode will complete the show
+                if user_show["Episodes"] + 1 == total_episodes or user_show["Episodes"] + 1 > total_episodes:
+                    user_show["Episodes"] = total_episodes
+                    user_show["Status"] = "completed"
+
+                else:
+                    user_show["Episodes"] += 1
+
+                # Update the user's data in the database
+                mongo.db.Users.update_one({"Username": logged_in_username}, {"$set": user_data})
+
+                # Calculate the completion percentage
+                completion_percentage = (user_show["Episodes"] / total_episodes) * 100 if total_episodes else 0
+
+
+
+                return jsonify({
+                                    "completion_percentage": completion_percentage,
+                                    "current_episode": user_show["Episodes"],
+                                    "status": user_show["Status"]
+                                })
+
+    error = "Error advancing episode"
+    return redirect("/dashboard?error=" + error)
+
+@app.route('/show_details/<show_title>')
+def show_details(show_title):
+    if 'username' in session:
+        logged_in_username = session['username']
+
+        user_data = mongo.db.Users.find_one({"Username": logged_in_username})
+        if user_data:
+            user_show = next((show for show in user_data["Shows_Watched"] if show["Name"] == show_title), None)
+            if user_show:
+                show = mongo.db.TV.find_one({"Title": show_title})
+
+                # Calculates the percentage watched
+                total_episodes = show["Number_of_Episodes"]
+                completion_percentage = (user_show["Episodes"] / total_episodes) * 100
+
+                return render_template('show_details.html', show=show, user_show=user_show, completion_percentage=completion_percentage)
+
+    error = "Show details not found"
+    return redirect("/dashboard?error=" + error)
+
+@app.route('/restart_show/<show_title>', methods=["POST"])
+def restart_show(show_title):
+    if 'username' in session:
+        logged_in_username = session['username']
+
+        user_data = mongo.db.Users.find_one({"Username": logged_in_username})
+        if user_data:
+            user_show = next((show for show in user_data["Shows_Watched"] if show["Name"] == show_title), None)
+
+            if user_show and user_show["Status"] == "completed":
+                # Set status to "watching" and reset episodes to 0
+                user_show["Status"] = "watching"
+                user_show["Episodes"] = 0
+
+                # Update the user's data in the database
+                mongo.db.Users.update_one({"Username": logged_in_username}, {"$set": user_data})
+
+                return redirect("/show_details/" + show_title)
+
+    error = "Error restarting show"
+    return redirect("/dashboard?error=" + error)
+
+@app.route('/remove_show/<show_title>', methods=["GET","POST"])
+def remove_show(show_title):
+    if 'username' in session:
+        logged_in_username = session['username']
+
+        user_data = mongo.db.Users.find_one({"Username": logged_in_username})
+        if user_data:
+            user_show = next((show for show in user_data["Shows_Watched"] if show["Name"] == show_title), None)
+
+            if user_show and user_show["Status"] == "completed":
+                # Remove the show from the user's watched shows
+                user_data["Shows_Watched"] = [show for show in user_data["Shows_Watched"] if show["Name"] != show_title]
+
+                # Update the user's data in the database
+                mongo.db.Users.update_one({"Username": logged_in_username}, {"$set": user_data})
+
+                return redirect("/dashboard")
+
+    error = "Error removing show"
+    return redirect("/dashboard?error=" + error)
 
 if __name__ == "__main__":
     app.run(debug=True)
