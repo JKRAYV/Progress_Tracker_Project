@@ -7,6 +7,7 @@
 body {
     font-family: Arial, Helvetica, sans-serif;
     background: url(room-2559790_1280.jpg);
+    background-repeat: no-repeat;
     background-size: cover;
   }
 h1{
@@ -33,7 +34,7 @@ h1{
    font-size: 40px; 
    text-align: center;
    margin: 40px 0;
-   color:#fff
+   color: #fff
 }
 .login-form label{
     font-size: 20px;
@@ -46,6 +47,7 @@ h1{
     border: 0;
     outline: none;
     border-radius: 5px;
+    
 }
 .login-form button{
     font-size: 18px;
