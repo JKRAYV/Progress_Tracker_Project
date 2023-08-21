@@ -44,10 +44,15 @@ def register():
         password = request.form.get("password")
 
         existing_user = mongo.db.Users.find_one({"Username": username})
+        existing_email = mongo.db.Users.find_one({"Email": email})
 
         if existing_user:
             error = "Username already taken. Please choose a different username."
             return render_template("register.html", error=error)
+        elif existing_email:
+            error = "Email already in use. Please choose a different email."
+            return render_template("register.html", error=error)
+            
 
         # Insert the user into the database
         new_user = {
