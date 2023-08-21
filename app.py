@@ -60,7 +60,7 @@ def register():
             "Lname": last_name,
             "Username": username,
             "Password": password,
-            "Profile image": "user_bright.png",
+            "Profile_image": "user_bright.png",
             "Email":email,
             "Role": "user",
             "Shows_Watched" : []
