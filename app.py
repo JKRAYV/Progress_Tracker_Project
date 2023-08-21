@@ -2,14 +2,15 @@ from flask import Flask, jsonify, request, render_template, redirect, session
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
 import os
+import re
 
 app = Flask(__name__)
 
-try: 
+try:
     app = Flask(__name__)
     app.config["MONGO_URI"] = "mongodb://localhost:27017/progress_tracker"
-    mongo = PyMongo(app) 
-except: 
+    mongo = PyMongo(app)
+except:
         print("ERROR- cannot connect to db")
 
 @app.route('/', methods=["GET", "POST"])
@@ -32,12 +33,51 @@ def login():
 
     return render_template("login.html")
 
+@app.route('/register', methods=["GET", "POST"])
+def register():
+    app.secret_key = os.urandom(24)
+    if request.method == "POST":
+        first_name = request.form.get("first_name")
+        last_name = request.form.get("last_name")
+        username = request.form.get("username")
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        existing_user = mongo.db.Users.find_one({"Username": username})
+        existing_email = mongo.db.Users.find_one({"Email": email})
+
+        if existing_user:
+            error = "Username already taken. Please choose a different username."
+            return render_template("register.html", error=error)
+        elif existing_email:
+            error = "Email already in use. Please choose a different email."
+            return render_template("register.html", error=error)
+            
+
+        # Insert the user into the database
+        new_user = {
+            "Fname": first_name,
+            "Lname": last_name,
+            "Username": username,
+            "Password": password,
+            "Profile image": "path/to/image",
+            "Email":email,
+            "Role": "user",
+            "Shows_Watched" : []
+        }
+        mongo.db.Users.insert_one(new_user)
+
+        session['username'] = username
+        return redirect("/dashboard")
+
+    return render_template("register.html")
+
 @app.route("/users", methods=["GET","POST"])
 def get_users():
     if request.method == "GET":
         users = list(mongo.db.Users.find())
         for user in users:
-            user["_id"] = str(user["_id"])  # Convert ObjectId to string for JSON serialization    
+            user["_id"] = str(user["_id"])  # Convert ObjectId to string for JSON serialization
         return render_template("./users.html", users=users)
 
     elif request.method == "POST":
@@ -53,7 +93,7 @@ def get_tvshows():
     if request.method == "GET":
         tv = list(mongo.db.TV.find())
         for show in tv:
-            show["_id"] = str(show["_id"])  # Convert ObjectId to string for JSON serialization    
+            show["_id"] = str(show["_id"])  # Convert ObjectId to string for JSON serialization
         return render_template("./tv.html", tv=tv)
 
     elif request.method == "POST":
@@ -62,14 +102,26 @@ def get_tvshows():
         # Handle Mongo interactions here
 
     return "request handled"
+
 @app.route('/dashboard', methods=["GET","POST","PUT"])
 def dashboard():
     if 'username' in session:
         logged_in_username = session['username'] #current user logged in
 
         user_data = mongo.db.Users.find_one({"Username": logged_in_username}) #finds instance of user
+        
+        tv_shows = list(mongo.db.TV.find())  # Retrieve all TV shows from the TV collection
+
+        # Handle regex search for available shows
+        regex_pattern = request.form.get("regex_pattern")
+        if regex_pattern:
+            try:
+                tv_shows = [show for show in tv_shows if re.search(regex_pattern, show["Title"])]
+            except re.error:
+                error = "Invalid regex pattern"
+                return render_template("dashboard.html", user_data=user_data, available_shows=tv_shows, error=error)
+
         if user_data:
-            tv_shows = list(mongo.db.TV.find())  # Retrieve all TV shows from the TV collection
             #-------------------------Updates Status of shows-------------------------
             for show in user_data["Shows_Watched"]:
                 for tv_show in tv_shows:
@@ -83,7 +135,7 @@ def dashboard():
                             show["Status"] = "completed"
                             show["Episodes"] = num_episodes
                         break  # No need to continue searching for matching TV shows
-                        
+
             # Update user data in MongoDB
             mongo.db.Users.update_one({"Username": logged_in_username}, {"$set": {"Shows_Watched": user_data["Shows_Watched"]}})
             #--------------------------------------------------------------------------
@@ -99,7 +151,7 @@ def dashboard():
     else:
         error = "Please log in before accessing this data."
         return redirect("/")
-    
+
 @app.route('/add_show/<show_title>')
 def add_show(show_title):
     if 'username' in session:
@@ -182,7 +234,7 @@ def show_details(show_title):
                 # Calculates the percentage watched
                 total_episodes = show["Number_of_Episodes"]
                 completion_percentage = (user_show["Episodes"] / total_episodes) * 100
-                
+
 
                 return render_template('show_details.html', show=show, user_show=user_show, completion_percentage=completion_percentage)
 

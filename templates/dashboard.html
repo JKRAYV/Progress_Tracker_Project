@@ -27,8 +27,17 @@
     </ul>
 
      <!-- Shows available to watch -->
+    
+     
+    <br>
     <div class="shows-available">
         <h2>Available Shows</h2>
+        <!-- Search bar for shows -->
+    <form action="{{ url_for('dashboard') }}" method="POST">
+        <label for="search">Search Shows:</label>
+        <input type="text" id="search" name="regex_pattern" placeholder="Search for shows to add:">
+        <input type="submit" value="Search">
+    </form>
         <ul>
             {% for show in available_shows %}
                 <li>
