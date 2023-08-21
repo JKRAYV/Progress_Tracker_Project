@@ -60,7 +60,7 @@ def register():
             "Lname": last_name,
             "Username": username,
             "Password": password,
-            "Profile image": "path/to/image",
+            "Profile image": "user_bright.png",
             "Email":email,
             "Role": "user",
             "Shows_Watched" : []
@@ -173,7 +173,7 @@ def edit_profile():
             return render_template('edit_profile.html', user_data=user_data, avatars=avatars, error=error)
         
         # Update the database with the new username and avatar
-        mongo.db.Users.update_one({"Username": session['username']}, {"$set": {"Username": new_username, "Avatar": selected_avatar}})
+        mongo.db.Users.update_one({"Username": session['username']}, {"$set": {"Username": new_username, "Profile image": selected_avatar}})
         
         # Update the session username
         session['username'] = new_username
