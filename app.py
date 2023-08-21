@@ -152,6 +152,38 @@ def dashboard():
         error = "Please log in before accessing this data."
         return redirect("/")
 
+@app.route('/edit_profile', methods=["GET", "POST"])
+def edit_profile():
+    if 'username' not in session:
+        return redirect('/')
+    
+    # Fetch user data from the database
+    user_data = mongo.db.Users.find_one({"Username": session['username']})
+
+    # If POST request, update the user's profile
+    if request.method == "POST":
+        new_username = request.form.get("username")
+        selected_avatar = request.form.get("avatar")
+        
+        # Check if the new username is already taken by another user
+        existing_user = mongo.db.Users.find_one({"Username": new_username})
+        if existing_user and existing_user["Username"] != session['username']:
+            error = "Username already taken. Please choose a different username."
+            avatars = os.listdir('static/profileimages')
+            return render_template('edit_profile.html', user_data=user_data, avatars=avatars, error=error)
+        
+        # Update the database with the new username and avatar
+        mongo.db.Users.update_one({"Username": session['username']}, {"$set": {"Username": new_username, "Avatar": selected_avatar}})
+        
+        # Update the session username
+        session['username'] = new_username
+
+        return redirect('/dashboard')
+
+    # If GET request, display the edit profile page
+    avatars = os.listdir('static/profileimages')  # List all avatars from the given directory
+    return render_template('edit_profile.html', user_data=user_data, avatars=avatars)
+
 @app.route('/add_show/<show_title>')
 def add_show(show_title):
     if 'username' in session:

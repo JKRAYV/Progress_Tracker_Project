@@ -8,6 +8,7 @@
 !templates/users.html
 !templates/show_details.html
 !templates/dashboard.html
+!templates/edit_profile.html
 !static/styles/login.css
 !static/styles/room-2559790_1280.jpg
 !static/css/styles.css

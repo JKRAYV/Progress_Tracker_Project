@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Edit Profile</title>
+</head>
+<body>
+    <h1>Edit Profile</h1>
+    <form action="/edit_profile" method="POST">
+        <label for="username">Change username:</label><br>
+        <input type="text" id="username" name="username" value="{{ user_data.Username }}" required><br><br>
+        <label for="avatar">Select Avatar:</label><br>
+        {% for image in avatars %}
+            <input type="radio" id="{{ image }}" name="avatar" value="{{ image }}">
+            <label for="{{ image }}"><div style="background-color: red; width: 60px; height: 60px; display: inline-block; vertical-align: middle; line-height: 60px; text-align: center;"><img src="{{ url_for('static', filename='profileimages/' + image) }}" width="50" height="50" style="vertical-align: middle;"></div></label><br>
+        {% endfor %}
+        <br>
+        <input type="submit" value="Update Profile">
+    </form>
+    <br>
+    <a href="/dashboard"><button>Back to Dashboard</button></a>
+</body>
+</html>
