@@ -34,15 +34,16 @@ def login():
 
 @app.route('/register', methods=["GET", "POST"])
 def register():
+    app.secret_key = os.urandom(24)
     if request.method == "POST":
         first_name = request.form.get("first_name")
         last_name = request.form.get("last_name")
-        email = request.form.get("email")
         username = request.form.get("username")
+        email = request.form.get("email")
         password = request.form.get("password")
 
-        existing_user = users_collection.find_one({"Username": username})
-
+        # Check if the username is already taken
+        existing_user = mongo.db.Users.find_one({"Username": username}).find_one({"Username": username})
         if existing_user:
             error = "Username already taken. Please choose a different username."
             return render_template("register.html", error=error)
@@ -54,11 +55,11 @@ def register():
         new_user = {
             "First_name": first_name,
             "Last_name": last_name,
-            "Email":email,
             "Username": username,
+            "Email": email,
             "Password": hashed_password  # Replace with hashed password
         }
-        users_collection.insert_one(new_user)
+        existing_user.insert_one(new_user)
 
         session['username'] = username
         return redirect("/dashboard")
@@ -95,6 +96,7 @@ def get_tvshows():
         # Handle Mongo interactions here
 
     return "request handled"
+
 @app.route('/dashboard', methods=["GET","POST","PUT"])
 def dashboard():
     if 'username' in session:
