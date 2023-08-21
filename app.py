@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, render_template, redirect, session
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
 import os
+import re
 
 app = Flask(__name__)
 
@@ -34,6 +35,7 @@ def login():
 
 @app.route('/register', methods=["GET", "POST"])
 def register():
+    app.secret_key = os.urandom(24)
     if request.method == "POST":
         first_name = request.form.get("first_name")
         last_name = request.form.get("last_name")
@@ -41,7 +43,7 @@ def register():
         username = request.form.get("username")
         password = request.form.get("password")
 
-        existing_user = users_collection.find_one({"Username": username})
+        existing_user = mongo.db.Users.find_one({"Username": username})
 
         if existing_user:
             error = "Username already taken. Please choose a different username."
@@ -52,13 +54,16 @@ def register():
 
         # Insert the user into the database
         new_user = {
-            "First_name": first_name,
-            "Last_name": last_name,
-            "Email":email,
+            "Fname": first_name,
+            "Lname": last_name,
             "Username": username,
-            "Password": hashed_password  # Replace with hashed password
+            "Password": password,
+            "Profile image": "path/to/image",
+            "Email":email,
+            "Role": "user",
+            "Shows_Watched" : []
         }
-        users_collection.insert_one(new_user)
+        mongo.db.Users.insert_one(new_user)
 
         session['username'] = username
         return redirect("/dashboard")
@@ -101,8 +106,19 @@ def dashboard():
         logged_in_username = session['username'] #current user logged in
 
         user_data = mongo.db.Users.find_one({"Username": logged_in_username}) #finds instance of user
+        
+        tv_shows = list(mongo.db.TV.find())  # Retrieve all TV shows from the TV collection
+
+        # Handle regex search for available shows
+        regex_pattern = request.form.get("regex_pattern")
+        if regex_pattern:
+            try:
+                tv_shows = [show for show in tv_shows if re.search(regex_pattern, show["Title"])]
+            except re.error:
+                error = "Invalid regex pattern"
+                return render_template("dashboard.html", user_data=user_data, available_shows=tv_shows, error=error)
+
         if user_data:
-            tv_shows = list(mongo.db.TV.find())  # Retrieve all TV shows from the TV collection
             #-------------------------Updates Status of shows-------------------------
             for show in user_data["Shows_Watched"]:
                 for tv_show in tv_shows:
