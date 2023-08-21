@@ -48,16 +48,13 @@ def register():
             error = "Username already taken. Please choose a different username."
             return render_template("register.html", error=error)
 
-        # Hash and store the password (use a proper password hashing library)
-        # hashed_password = hash_function(password)
-
         # Insert the user into the database
         new_user = {
             "First_name": first_name,
             "Last_name": last_name,
             "Username": username,
             "Email": email,
-            "Password": hashed_password  # Replace with hashed password
+            "Password": password
         }
         existing_user.insert_one(new_user)
 
