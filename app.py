@@ -39,8 +39,8 @@ def register():
     if request.method == "POST":
         first_name = request.form.get("first_name")
         last_name = request.form.get("last_name")
-        email = request.form.get("email")
         username = request.form.get("username")
+        email = request.form.get("email")
         password = request.form.get("password")
 
         existing_user = mongo.db.Users.find_one({"Username": username})
@@ -48,9 +48,6 @@ def register():
         if existing_user:
             error = "Username already taken. Please choose a different username."
             return render_template("register.html", error=error)
-
-        # Hash and store the password (use a proper password hashing library)
-        # hashed_password = hash_function(password)
 
         # Insert the user into the database
         new_user = {
@@ -100,6 +97,7 @@ def get_tvshows():
         # Handle Mongo interactions here
 
     return "request handled"
+
 @app.route('/dashboard', methods=["GET","POST","PUT"])
 def dashboard():
     if 'username' in session:
